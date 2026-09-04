@@ -1,0 +1,2532 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skindential AI | 智能膚況分析標記平台</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #030712;
+            --panel-bg: rgba(9, 13, 24, 0.65);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(255, 255, 255, 0.12);
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            
+            --brand-primary: #6366f1;
+            --brand-secondary: #8b5cf6;
+            --brand-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+
+            /* Category Colors - Modern Palette */
+            --cat-pores: hsl(38, 92%, 50%);
+            --cat-acne: hsl(350, 89%, 60%);
+            --cat-spots: hsl(265, 89%, 65%);
+            --cat-scars: hsl(190, 90%, 50%);
+            --cat-sensitive: hsl(325, 83%, 60%);
+            --cat-wrinkles: hsl(45, 93%, 47%);
+            --cat-other: hsl(210, 14%, 60%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: radial-gradient(ellipse at top, rgba(99, 102, 241, 0.08), transparent 50%),
+                              radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.05), transparent 50%);
+        }
+
+        /* Premium Header */
+        header {
+            height: 76px;
+            background: rgba(3, 7, 18, 0.8);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            backdrop-filter: blur(24px);
+            z-index: 1000;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .brand-logo h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 26px;
+            font-weight: 900;
+            background: var(--brand-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-logo span {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            color: var(--brand-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-select-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-select-wrapper i {
+            position: absolute;
+            left: 14px;
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        #model-select {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 16px 10px 42px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            width: 260px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            appearance: none;
+        }
+
+        #model-select:hover {
+            border-color: var(--border-hover);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        #model-select:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        #model-select option {
+            background-color: #0f172a;
+            color: #f9fafb;
+        }
+
+        #auto-label-btn {
+            background: var(--brand-gradient);
+            color: white;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #auto-label-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.45);
+        }
+
+        /* Dashboard Layout */
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            padding: 16px;
+            gap: 16px;
+        }
+
+        /* Bento Grid Panel Styling */
+        .glass-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(32px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        /* Left Column: Image Database */
+        .sidebar-left {
+            width: 320px;
+            padding: 24px;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .image-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 4px;
+        }
+
+        .image-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .image-list::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+        }
+
+        .image-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .image-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .image-card.active {
+            background: rgba(99, 102, 241, 0.08);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.15);
+        }
+
+        .image-card-thumb {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: #111827;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .image-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .image-card-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Center Viewport: Blueprint Grid Canvas */
+        .viewport-panel {
+            flex: 1;
+            position: relative;
+            background: #04060b;
+            /* Blueprint Grid Pattern */
+            background-image: radial-gradient(rgba(99, 102, 241, 0.1) 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Floating Toolbar Overlaying Canvas */
+        .floating-controls-overlay {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(13, 18, 30, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 10px 20px;
+            border-radius: 40px;
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .floating-tool-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+        }
+
+        .floating-tool-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.06);
+        }
+
+        .floating-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--border-color);
+        }
+
+        .zoom-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: monospace;
+            min-width: 48px;
+            text-align: center;
+        }
+
+        /* Right Column: Layer Filters & Analytics */
+        .sidebar-right {
+            width: 380px;
+            padding: 24px;
+        }
+
+        /* Bento Cards */
+        .bento-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .bento-card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .bento-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-number-wrapper {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a5b4fc 0%, #e879f9 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* Slider Controls Inside Cards */
+        .bento-slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .bento-slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 14px;
+        }
+
+        .bento-slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .bento-slider-header span.val {
+            color: var(--brand-primary);
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .bento-slider-row input[type="range"] {
+            width: 100%;
+            accent-color: var(--brand-primary);
+            cursor: pointer;
+            height: 4px;
+            outline: none;
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Collapsible Category Cards */
+        .category-group {
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.01);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            transition: all 0.25s ease;
+        }
+
+        .category-group:hover {
+            border-color: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .category-header {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .category-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .category-title {
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .category-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Styled Switch Toggles instead of standard Checkbox */
+        .switch-toggle {
+            position: relative;
+            display: inline-block;
+            width: 32px;
+            height: 18px;
+        }
+
+        .switch-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            transition: .3s;
+            border-radius: 18px;
+            border: 1px solid var(--border-color);
+        }
+
+        .switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .switch-slider {
+            background-color: var(--brand-primary);
+        }
+
+        input:checked + .switch-slider:before {
+            transform: translateX(14px);
+        }
+
+        .category-content {
+            padding: 10px 16px 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 2px 0;
+            transition: color 0.2s ease;
+        }
+
+        .checkbox-container:hover {
+            color: var(--text-primary);
+        }
+
+        /* Tooltip style */
+        .tooltip {
+            position: absolute;
+            background: rgba(10, 15, 30, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Floating Popover */
+        #edit-popover {
+            display: none;
+            position: absolute;
+            background: #0b0f19;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 1000;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            flex-direction: column;
+            gap: 10px;
+            width: 240px;
+            backdrop-filter: blur(16px);
+        }
+
+        #edit-popover label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 700;
+            display: block;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        #edit-popover select {
+            background: #030712;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 13px;
+            width: 100%;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Multi Delete overlay */
+        .batch-delete-btn {
+            position: absolute;
+            bottom: 90px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .batch-delete-btn:hover {
+            transform: scale(1.05);
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-logo" onclick="resetZoom()">
+            <h1 id="brand-title">SKINDENTIAL AI</h1>
+            <span>Workspace</span>
+        </div>
+         <div class="header-actions">
+            <div class="header-select-wrapper">
+                <i data-lucide="cpu" class="icon-sm"></i>
+                <select id="model-select">
+                    <option value="">讀取模型清單...</option>
+                </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 12px; font-size: 13px; font-weight: 600; color: var(--text-secondary); height: 40px; box-sizing: border-box;">
+                <span style="font-size: 12px;">SAHI 切片</span>
+                <label class="switch-toggle" style="margin-bottom: 0;">
+                    <input type="checkbox" id="sahi-toggle">
+                    <span class="switch-slider"></span>
+                </label>
+            </div>
+            <button id="auto-label-btn">
+                <i data-lucide="sparkles" class="icon-sm"></i> AI 自動標記
+            </button>
+            <button id="view-report-btn" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: white; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="file-bar-chart-2" class="icon-sm"></i> 查看分析報告
+            </button>
+        </div>
+        <div class="stats-badge" id="total-annotations-badge">
+            <i data-lucide="shield-alert" class="icon-sm"></i> 載入中...
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Left Bento Panel -->
+        <div class="glass-panel sidebar-left">
+            <div class="sidebar-header">
+                <div class="section-title"><i data-lucide="database" class="icon-sm"></i> 影像資料庫</div>
+                <span class="count-badge" id="image-count-badge">0</span>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <label class="upload-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 12px; transition: background 0.2s;">
+                    <i data-lucide="upload" class="icon-sm"></i> 批次載入
+                    <input type="file" id="batch-upload-input" multiple accept=".jpg,.jpeg,.png,.txt,.json" style="display: none;">
+                </label>
+                <button id="export-yolo-btn" style="flex: 1; background: #10b981; color: white; border: none; padding: 10px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <i data-lucide="download" class="icon-sm"></i> 匯出 YOLO
+                </button>
+            </div>
+
+            <div class="image-list" id="image-list-container">
+                <!-- Loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Center Viewport Panel -->
+        <div class="glass-panel viewport-panel">
+            <div class="draw-mode-badge" id="draw-mode-indicator">
+                <i data-lucide="mouse-pointer-click" class="icon-sm" style="color:#818cf8;"></i> 滾輪：縮放 | 右鍵：拖曳平移 | 左鍵：拉框標記 | Shift+左鍵：框選刪除
+            </div>
+            
+            <div class="canvas-wrapper" id="viewport-container">
+                <img id="face-img" src="" alt="Face skin scan" style="display: none;">
+                <canvas id="overlay-canvas" class="canvas-overlay" style="cursor: grab;"></canvas>
+            </div>
+            
+            <!-- Floating Canvas Toolbar -->
+            <div class="floating-controls-overlay">
+                <button class="floating-tool-btn" onclick="zoomIn()" title="放大"><i data-lucide="zoom-in" class="icon-sm"></i></button>
+                <span class="zoom-label" id="zoom-percentage">100%</span>
+                <button class="floating-tool-btn" onclick="zoomOut()" title="縮小"><i data-lucide="zoom-out" class="icon-sm"></i></button>
+                <div class="floating-divider"></div>
+                <button class="floating-tool-btn" onclick="resetZoom()" title="適應螢幕大小"><i data-lucide="maximize" class="icon-sm"></i></button>
+            </div>
+
+            <div id="canvas-tooltip" class="tooltip"></div>
+            
+            <!-- Floating Batch Delete Button -->
+            <button id="batch-delete-btn" class="batch-delete-btn" style="display: none;">
+                <i data-lucide="trash-2" class="icon-sm"></i> 刪除選取的標記 (<span id="batch-delete-count">0</span>)
+            </button>
+            
+            <!-- Floating Edit Popover -->
+            <div id="edit-popover">
+                <label>標籤類別</label>
+                <select id="popover-class-select">
+                    <!-- options populated dynamically -->
+                </select>
+                <div style="display: flex; gap: 8px; margin-top: 4px;">
+                    <button id="popover-delete-btn" style="flex: 1; background: #ef4444; color: white; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <i data-lucide="trash-2" style="width:14px;height:14px;"></i> 刪除
+                    </button>
+                    <button id="popover-close-btn" style="background: #374151; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">關閉</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Bento Panel -->
+        <div class="glass-panel sidebar-right">
+            <!-- Analytics Card -->
+            <div class="bento-card">
+                <div class="bento-card-title"><i data-lucide="activity" class="icon-sm" style="color:#a855f7;"></i> 標記計數與過濾</div>
+                <div class="stat-grid" style="margin-bottom: 16px;">
+                    <div class="stat-number-wrapper">
+                        <div class="stat-number" id="stat-total">0</div>
+                        <div class="stat-label">總病灶數</div>
+                    </div>
+                    <div class="stat-number-wrapper">
+                        <div class="stat-number" id="stat-active">0</div>
+                        <div class="stat-label">已顯示框</div>
+                    </div>
+                </div>
+
+                <!-- Sliders -->
+                <div class="bento-slider-group">
+                    <div class="bento-slider-row">
+                        <div class="bento-slider-header">
+                            <span>信心門檻 (Confidence)</span>
+                            <span id="conf-val-label" class="val">0.00</span>
+                        </div>
+                        <input type="range" id="confidence-slider" min="0" max="1" step="0.01" value="0">
+                    </div>
+                    <div class="bento-slider-row">
+                        <div class="bento-slider-header">
+                            <span>重疊過濾門檻 (NMS IOU)</span>
+                            <span id="iou-val-label" class="val">0.70</span>
+                        </div>
+                        <input type="range" id="iou-slider" min="0.1" max="0.9" step="0.01" value="0.70">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrollable Checklist Card -->
+            <div style="flex:1; overflow-y:auto; padding-right: 4px;">
+                <div class="bento-card-title"><i data-lucide="layers" class="icon-sm" style="color:#6366f1;"></i> 膚況圖層控制</div>
+                <div id="categories-container">
+                    <!-- Groups and subclasses will load here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const categoryColors = {
+            "粉刺毛孔": "hsl(38, 92%, 50%)",
+            "痤瘡發炎": "hsl(350, 89%, 60%)",
+            "斑點痣類": "hsl(265, 89%, 65%)",
+            "疤痕凹洞": "hsl(190, 90%, 50%)",
+            "敏感發紅": "hsl(325, 83%, 60%)",
+            "老化皺紋": "hsl(45, 93%, 47%)",
+            "其他膚況": "hsl(210, 14%, 60%)"
+        };
+
+        window.onerror = function(msg, url, line, col, error) {
+            alert("JS 錯誤資訊: " + msg + "\n行號: " + line + "\n列號: " + col + "\n堆疊追蹤: " + (error ? error.stack : ""));
+            return false;
+        };
+
+        let skinData = null;
+        let currentSampleIdx = 0;
+        const filterState = {};
+
+        const faceImg = document.getElementById("face-img");
+        const canvas = document.getElementById("overlay-canvas");
+        const ctx = canvas.getContext("2d");
+        const tooltip = document.getElementById("canvas-tooltip");
+        const editPopover = document.getElementById("edit-popover");
+        const popoverClassSelect = document.getElementById("popover-class-select");
+        const popoverDeleteBtn = document.getElementById("popover-delete-btn");
+        const popoverCloseBtn = document.getElementById("popover-close-btn");
+        const exportYoloBtn = document.getElementById("export-yolo-btn");
+        
+        const confidenceSlider = document.getElementById("confidence-slider");
+        const confValLabel = document.getElementById("conf-val-label");
+        const iouSlider = document.getElementById("iou-slider");
+        const iouValLabel = document.getElementById("iou-val-label");
+        const batchDeleteBtn = document.getElementById("batch-delete-btn");
+        const batchDeleteCountSpan = document.getElementById("batch-delete-count");
+        const modelSelect = document.getElementById("model-select");
+        const autoLabelBtn = document.getElementById("auto-label-btn");
+        const zoomPercentageLabel = document.getElementById("zoom-percentage");
+
+        // Category Collapse States
+        const categoryCollapsedState = {};
+
+        // Interaction state
+        let selectedRoi = null;
+        let selectedRois = [];
+        let dragMode = null; // 'move', 'resize-tl', 'resize-tr', 'resize-bl', 'resize-br', 'draw', 'select'
+        let dragStartMouse = { x: 0, y: 0 };
+        let dragStartRoi = { cx: 0, cy: 0, w: 0, h: 0 };
+        let selectionBox = null;
+        let confThreshold = 0.0;
+        let iouThreshold = 0.7;
+        const HANDLE_SIZE = 6;
+
+        // Zoom & Pan state variables
+        let zoomScale = 1.0;
+        let panOffset = { x: 0, y: 0 };
+        let isPanning = false;
+        let panStartMouse = { x: 0, y: 0 };
+        let panStartOffset = { x: 0, y: 0 };
+        let allModels = [];
+
+        // Load database json & Load AI models
+        fetch("skin_data.json")
+            .then(res => res.json())
+            .then(data => {
+                skinData = data;
+                initializeFilters();
+                renderImageList();
+                loadSample(0);
+                populateClassSelect();
+                loadModelsList();
+                
+                // Bind inputs
+                document.getElementById("batch-upload-input").addEventListener("change", handleBatchUpload);
+                exportYoloBtn.addEventListener("click", exportCurrentYolo);
+                confidenceSlider.addEventListener("input", handleConfidenceChange);
+                iouSlider.addEventListener("input", () => {
+                    iouThreshold = parseFloat(iouSlider.value);
+                    iouValLabel.textContent = iouThreshold.toFixed(2);
+                });
+                batchDeleteBtn.addEventListener("click", deleteSelectedRois);
+                autoLabelBtn.addEventListener("click", runAiInference);
+                window.addEventListener("keydown", handleKeyDown);
+                modelSelect.addEventListener("change", handleModelChange);
+
+                // Mouse zoom & pan bindings
+                canvas.addEventListener("wheel", handleMouseWheel, { passive: false });
+                canvas.addEventListener("contextmenu", e => e.preventDefault());
+            })
+            .catch(err => {
+                console.error("Failed to load skin data:", err);
+                document.getElementById("total-annotations-badge").innerText = "載入失敗";
+            });
+
+        function loadModelsList() {
+            fetch("/api/models")
+                .then(res => res.json())
+                .then(models => {
+                    allModels = models;
+                    modelSelect.innerHTML = "";
+                    models.forEach(model => {
+                        const opt = document.createElement("option");
+                        opt.value = model.path;
+                        opt.textContent = model.name;
+                        modelSelect.appendChild(opt);
+                    });
+                    
+                    if (models.length > 0) {
+                        handleModelChange();
+                    }
+                })
+                .catch(err => {
+                    console.error("Error loading model list:", err);
+                    modelSelect.innerHTML = '<option value="">載入失敗</option>';
+                });
+        }
+
+        function handleModelChange() {
+            const selectedModelPath = modelSelect.value;
+            const modelObj = allModels.find(m => m.path === selectedModelPath);
+            if (modelObj && modelObj.classes) {
+                updateCategoriesForModel(modelObj.classes);
+            }
+        }
+
+        function updateCategoriesForModel(classes) {
+            if (!classes || classes.length === 0) return;
+            
+            const standardCategories = {
+                "粉刺毛孔": ["栗粒腫", "毛孔粗大", "皮脂腺囊腫", "皮脂腺增生", "閉合性粉刺", "閉鎖性粉刺", "開放性粉刺"],
+                "痤瘡發炎": ["丘疹", "毛囊炎", "水泡", "滲組織液", "痘痘", "紅腫", "膿皰", "膿胞"],
+                "斑點痣類": ["太田母斑", "日曬斑", "痣", "老人斑", "肝斑", "胎記", "脂漏性角化斑", "色素斑", "雀斑", "顴骨母斑"],
+                "疤痕凹洞": ["傷疤", "凹洞", "水痘疤", "痘印", "痘坑", "痘疤", "結痂", "蟹足腫"],
+                "敏感發紅": ["微血管擴張", "片狀紅斑", "脂漏性皮膚炎", "脫屑", "脫皮", "輕微敏感發紅"],
+                "老化皺紋": ["抬頭紋", "法令紋", "皺眉紋", "細紋", "鬆弛", "魚尾紋"],
+                "其他膚況": ["囊腫", "垂疣", "小紅疹", "扁平疣", "暗沈", "汗管瘤", "淡紅色小圓點", "皮膚損傷", "皰疹", "老人血管瘤", "脂溢性角化斑(老人斑)", "色素沉澱", "表皮囊腫", "黑眼圈"]
+            };
+
+            for (let cat in skinData.categories) {
+                skinData.categories[cat] = [];
+            }
+
+            classes.forEach(cls => {
+                let found = false;
+                for (let cat in standardCategories) {
+                    if (standardCategories[cat].includes(cls)) {
+                        skinData.categories[cat].push(cls);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    skinData.categories["其他膚況"].push(cls);
+                }
+                if (filterState[cls] === undefined) {
+                    filterState[cls] = true;
+                }
+            });
+
+            populateClassSelect();
+            renderCategoriesPanel();
+            drawAnnotations();
+        }
+
+        // Convert base64 image data to Blob file
+        function dataURItoBlob(dataURI) {
+            try {
+                let byteString;
+                if (dataURI.split(',')[0].indexOf('base64') >= 0)
+                    byteString = atob(dataURI.split(',')[1]);
+                else
+                    byteString = unescape(dataURI.split(',')[1]);
+                
+                const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+                const ia = new Uint8Array(byteString.length);
+                for (let i = 0; i < byteString.length; i++) {
+                    ia[i] = byteString.charCodeAt(i);
+                }
+                return new Blob([ia], {type:mimeString});
+            } catch (e) {
+                alert("Blob 轉換失敗: " + e.message);
+                throw e;
+            }
+        }
+
+        function runAiInference() {
+            try {
+                const sample = skinData.samples[currentSampleIdx];
+                if (!sample) return;
+
+                const selectedModel = modelSelect.value;
+                if (!selectedModel) {
+                    alert("請選擇一個 AI 標記模型！");
+                    return;
+                }
+
+                autoLabelBtn.disabled = true;
+                autoLabelBtn.textContent = "⚡ AI 推論中...";
+                
+                const blob = dataURItoBlob(sample.image);
+                const formData = new FormData();
+                formData.append("image", blob, `${sample.name}.jpg`);
+                formData.append("model_path", selectedModel);
+                formData.append("iou_threshold", iouThreshold);
+
+                const sahiToggle = document.getElementById("sahi-toggle");
+                const useSahi = sahiToggle ? sahiToggle.checked : false;
+                formData.append("use_sahi", useSahi ? "true" : "false");
+
+                fetch("/api/predict", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(resData => {
+                    if (resData.error) {
+                        alert(`AI 推論失敗: ${resData.error}`);
+                        return;
+                    }
+                    
+                    const newRois = [];
+                    resData.rois.forEach(roi => {
+                        let roiCat = "其他膚況";
+                        for (let cat in skinData.categories) {
+                            if (skinData.categories[cat].includes(roi.cls)) {
+                                roiCat = cat;
+                                break;
+                            }
+                        }
+                        newRois.push({
+                            cls: roi.cls,
+                            cat: roiCat,
+                            cx: roi.cx,
+                            cy: roi.cy,
+                            w: roi.w,
+                            h: roi.h,
+                            conf: roi.conf
+                        });
+                    });
+
+                    sample.rois = newRois;
+                    renderCategoriesPanel();
+                    drawAnnotations();
+
+                    const previewStr = newRois.slice(0, 8).map(r => `• [${r.cat}] ${r.cls} (${(r.conf * 100).toFixed(0)}%)`).join("\n");
+                    alert(`✅ AI 自動標記完成！共偵測到 ${newRois.length} 個膚況病灶。\n\n病灶預覽 (前8筆):\n${previewStr || "(無)"}`);
+                })
+                .catch(err => {
+                    alert("推論請求發生錯誤: " + err.message);
+                })
+                .finally(() => {
+                    autoLabelBtn.disabled = false;
+                    autoLabelBtn.textContent = "✨ AI 自動標記";
+                });
+            } catch (err) {
+                alert("AI 推論啟動時錯誤: " + err.message);
+                autoLabelBtn.disabled = false;
+                autoLabelBtn.textContent = "✨ AI 自動標記";
+            }
+        }
+
+        function loadSample(idx) {
+            currentSampleIdx = idx;
+            const sample = skinData.samples[idx];
+            
+            zoomScale = 1.0;
+            panOffset = { x: 0, y: 0 };
+            updateZoomLabel();
+
+            faceImg.onload = () => {
+                const container = document.getElementById("viewport-container");
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                renderCategoriesPanel();
+                drawAnnotations();
+            };
+
+            faceImg.src = sample.image;
+
+            if (faceImg.complete && faceImg.naturalWidth > 0) {
+                faceImg.onload();
+            }
+        }
+
+        function getTransformedMouseCoords(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (clientX - rect.left) * scaleX;
+            const mouseY = (clientY - rect.top) * scaleY;
+            
+            const tx = mouseX - panOffset.x - canvas.width / 2;
+            const ty = mouseY - panOffset.y - canvas.height / 2;
+            
+            return {
+                x: tx / zoomScale + canvas.width / 2,
+                y: ty / zoomScale + canvas.height / 2,
+                rawX: mouseX,
+                rawY: mouseY
+            };
+        }
+
+        function getFittedImageRect() {
+            if (!faceImg.complete || !faceImg.src) return { x: 0, y: 0, w: 1, h: 1 };
+            const canvasRatio = canvas.width / canvas.height;
+            const imgRatio = faceImg.naturalWidth / faceImg.naturalHeight;
+            
+            let w, h, x, y;
+            if (canvasRatio > imgRatio) {
+                h = canvas.height;
+                w = h * imgRatio;
+                x = (canvas.width - w) / 2;
+                y = 0;
+            } else {
+                w = canvas.width;
+                h = w / imgRatio;
+                x = 0;
+                y = (canvas.height - h) / 2;
+            }
+            return { x, y, w, h };
+        }
+
+        function handleMouseWheel(e) {
+            e.preventDefault();
+            const zoomFactor = 1.15;
+            const prevScale = zoomScale;
+            
+            if (e.deltaY < 0) {
+                zoomScale = Math.min(10.0, zoomScale * zoomFactor);
+            } else {
+                zoomScale = Math.max(0.5, zoomScale / zoomFactor);
+            }
+
+            const scaleRatio = zoomScale / prevScale;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+            
+            panOffset.x = mouseX - (mouseX - panOffset.x) * scaleRatio;
+            panOffset.y = mouseY - (mouseY - panOffset.y) * scaleRatio;
+
+            if (zoomScale === 1.0) {
+                panOffset = { x: 0, y: 0 };
+            }
+
+            updateZoomLabel();
+            drawAnnotations();
+        }
+
+        function updateZoomLabel() {
+            zoomPercentageLabel.textContent = `${Math.round(zoomScale * 100)}%`;
+        }
+
+        function zoomIn() {
+            zoomScale = Math.min(10.0, zoomScale * 1.2);
+            updateZoomLabel();
+            drawAnnotations();
+        }
+
+        function zoomOut() {
+            zoomScale = Math.max(0.5, zoomScale / 1.2);
+            updateZoomLabel();
+            drawAnnotations();
+        }
+
+        function resetZoom() {
+            zoomScale = 1.0;
+            panOffset = { x: 0, y: 0 };
+            updateZoomLabel();
+            drawAnnotations();
+        }
+
+        function handleConfidenceChange() {
+            confThreshold = parseFloat(confidenceSlider.value);
+            confValLabel.textContent = confThreshold.toFixed(2);
+            drawAnnotations();
+            renderCategoriesPanel();
+        }
+
+        function populateClassSelect() {
+            popoverClassSelect.innerHTML = "";
+            const flatClasses = getFlatClassesList();
+            flatClasses.forEach(cls => {
+                const opt = document.createElement("option");
+                opt.value = cls;
+                opt.textContent = cls;
+                popoverClassSelect.appendChild(opt);
+            });
+
+            popoverClassSelect.addEventListener("change", () => {
+                if (selectedRoi) {
+                    selectedRoi.cls = popoverClassSelect.value;
+                    let roiCat = "其他膚況";
+                    for (let cat in skinData.categories) {
+                        if (skinData.categories[cat].includes(selectedRoi.cls)) {
+                            roiCat = cat;
+                            break;
+                        }
+                    }
+                    selectedRoi.cat = roiCat;
+                    drawAnnotations();
+                    renderCategoriesPanel();
+                }
+            });
+
+            popoverDeleteBtn.addEventListener("click", () => {
+                if (selectedRoi) {
+                    const sample = skinData.samples[currentSampleIdx];
+                    const idx = sample.rois.indexOf(selectedRoi);
+                    if (idx > -1) {
+                        sample.rois.splice(idx, 1);
+                    }
+                    selectedRoi = null;
+                    hidePopover();
+                    drawAnnotations();
+                    renderCategoriesPanel();
+                }
+            });
+
+            popoverCloseBtn.addEventListener("click", () => {
+                selectedRoi = null;
+                hidePopover();
+                drawAnnotations();
+            });
+        }
+
+        function getFlatClassesList() {
+            const list = [];
+            for (let cat in skinData.categories) {
+                skinData.categories[cat].forEach(subcls => {
+                    if (!list.includes(subcls)) {
+                        list.push(subcls);
+                    }
+                });
+            }
+            return list.sort();
+        }
+
+        function showPopover(roi, clientX, clientY) {
+            editPopover.style.display = "flex";
+            editPopover.style.left = `${clientX + 10}px`;
+            editPopover.style.top = `${clientY + 10}px`;
+            popoverClassSelect.value = roi.cls;
+        }
+
+        function hidePopover() {
+            editPopover.style.display = "none";
+        }
+
+        function handleBatchUpload(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            const fileGroups = {};
+            files.forEach(file => {
+                const parts = file.name.split(".");
+                const ext = parts.pop().toLowerCase();
+                const baseName = parts.join(".");
+                if (!fileGroups[baseName]) {
+                    fileGroups[baseName] = { img: null, label: null };
+                }
+                if (["jpg", "jpeg", "png"].includes(ext)) {
+                    fileGroups[baseName].img = file;
+                } else if (["txt", "json"].includes(ext)) {
+                    fileGroups[baseName].label = file;
+                }
+            });
+
+            Object.keys(fileGroups).forEach(baseName => {
+                const group = fileGroups[baseName];
+                if (!group.img) return;
+
+                const readerImg = new FileReader();
+                readerImg.onload = (eventImg) => {
+                    const imgBase64 = eventImg.target.result;
+                    let rois = [];
+
+                    if (group.label) {
+                        const readerLabel = new FileReader();
+                        readerLabel.onload = (eventLabel) => {
+                            const labelText = eventLabel.target.result;
+                            const ext = group.label.name.split(".").pop().toLowerCase();
+                            const flatClasses = getFlatClassesList();
+
+                            if (ext === "txt") {
+                                const lines = labelText.split("\n");
+                                lines.forEach(line => {
+                                    const parts = line.trim().split(/\s+/);
+                                    if (parts.length >= 5) {
+                                        const clsId = parseInt(parts[0]);
+                                        const cx = parseFloat(parts[1]);
+                                        const cy = parseFloat(parts[2]);
+                                        const w = parseFloat(parts[3]);
+                                        const h = parseFloat(parts[4]);
+                                        const conf = parts.length >= 6 ? parseFloat(parts[5]) : 1.0;
+                                        
+                                        const clsName = flatClasses[clsId] || "未知";
+                                        let roiCat = "其他膚況";
+                                        for (let cat in skinData.categories) {
+                                            if (skinData.categories[cat].includes(clsName)) {
+                                                roiCat = cat;
+                                                break;
+                                            }
+                                        }
+                                        
+                                        rois.push({
+                                            cls: clsName,
+                                            cat: roiCat,
+                                            cx: cx,
+                                            cy: cy,
+                                            w: w,
+                                            h: h,
+                                            conf: conf
+                                        });
+                                    }
+                                });
+                            } else if (ext === "json") {
+                                try {
+                                    const jsonData = JSON.parse(labelText);
+                                    const rawRois = (jsonData.study && jsonData.study.ROIs) || jsonData.ROIs || [];
+                                    rawRois.forEach(roi => {
+                                        const prop = roi.properties || "未知";
+                                        const bbox = roi.bbox;
+                                        if (bbox) {
+                                            const rx = bbox[0] / 2850;
+                                            const ry = bbox[1] / 3800;
+                                            const rw = bbox[2] / 2850;
+                                            const rh = bbox[3] / 3800;
+                                            
+                                            let roiCat = "其他膚況";
+                                            for (let cat in skinData.categories) {
+                                                if (skinData.categories[cat].includes(prop)) {
+                                                    roiCat = cat;
+                                                    break;
+                                                }
+                                            }
+                                            rois.push({
+                                                cls: prop,
+                                                cat: roiCat,
+                                                cx: rx + rw/2,
+                                                cy: ry + rh/2,
+                                                w: rw,
+                                                h: rh,
+                                                conf: 1.0
+                                            });
+                                        }
+                                    });
+                                } catch (e) {
+                                    console.error(e);
+                                }
+                            }
+                            addNewSample(baseName, imgBase64, rois);
+                        };
+                        readerLabel.readAsText(group.label);
+                    } else {
+                        addNewSample(baseName, imgBase64, rois);
+                    }
+                };
+                readerImg.readAsDataURL(group.img);
+            });
+        }
+
+        function addNewSample(name, image, rois) {
+            skinData.samples.unshift({ name, image, rois });
+            renderImageList();
+            loadSample(0);
+        }
+
+        function initializeFilters() {
+            for (let cat in skinData.categories) {
+                skinData.categories[cat].forEach(subcls => {
+                    filterState[subcls] = true;
+                });
+            }
+        }
+
+        function renderImageList() {
+            const listContainer = document.getElementById("image-list-container");
+            listContainer.innerHTML = "";
+            document.getElementById("image-count-badge").innerText = skinData.samples.length;
+            
+            skinData.samples.forEach((sample, idx) => {
+                const card = document.createElement("div");
+                card.className = `image-card ${idx === currentSampleIdx ? 'active' : ''}`;
+                card.innerHTML = `
+                    <div class="image-card-thumb">
+                        <img src="${sample.image}" alt="thumb">
+                    </div>
+                    <div class="image-card-info">
+                        <div class="image-card-title">${sample.name}</div>
+                        <div class="image-card-meta"><i data-lucide="tag" style="width:12px;height:12px;"></i> ${sample.rois.length} 個標記</div>
+                    </div>
+                `;
+                card.addEventListener("click", () => {
+                    document.querySelectorAll(".image-card").forEach(el => el.classList.remove("active"));
+                    card.classList.add("active");
+                    selectedRoi = null;
+                    selectedRois = [];
+                    hidePopover();
+                    hideBatchDelete();
+                    loadSample(idx);
+                });
+                listContainer.appendChild(card);
+            });
+            lucide.createIcons({attrs: {class: "icon-sm"}});
+        }
+
+        function renderCategoriesPanel() {
+            const container = document.getElementById("categories-container");
+            container.innerHTML = "";
+            const sample = skinData.samples[currentSampleIdx];
+            const subclsCounts = {};
+            const catCounts = {};
+            
+            const activeSampleClasses = new Set();
+            sample.rois.forEach(roi => {
+                activeSampleClasses.add(roi.cls);
+                if (filterState[roi.cls] === undefined) {
+                    filterState[roi.cls] = true;
+                }
+            });
+
+            for (let cat in skinData.categories) {
+                catCounts[cat] = 0;
+                skinData.categories[cat].forEach(subcls => {
+                    subclsCounts[subcls] = 0;
+                });
+            }
+
+            const standardClasses = new Set(getFlatClassesList());
+            
+            activeSampleClasses.forEach(cls => {
+                if (!standardClasses.has(cls)) {
+                    subclsCounts[cls] = 0;
+                }
+            });
+
+            sample.rois.forEach(roi => {
+                const passesConfidence = (roi.conf === undefined || roi.conf >= confThreshold);
+                if (passesConfidence) {
+                    if (subclsCounts[roi.cls] !== undefined) {
+                        subclsCounts[roi.cls]++;
+                    }
+                    if (catCounts[roi.cat] !== undefined) {
+                        catCounts[roi.cat]++;
+                    } else {
+                        catCounts["其他膚況"] = (catCounts["其他膚況"] || 0) + 1;
+                    }
+                }
+            });
+
+            document.getElementById("stat-total").innerText = sample.rois.length;
+            document.getElementById("total-annotations-badge").innerHTML = `<i data-lucide="shield" class="icon-sm" style="color:#10b981;"></i> 當前樣本病灶數: ${sample.rois.length}`;
+            lucide.createIcons({attrs: {class: "icon-sm"}});
+
+            for (let cat in skinData.categories) {
+                const subClasses = [...skinData.categories[cat]];
+                
+                if (cat === "其他膚況") {
+                    activeSampleClasses.forEach(cls => {
+                        if (!standardClasses.has(cls) && !subClasses.includes(cls)) {
+                            subClasses.push(cls);
+                        }
+                    });
+                }
+
+                const catColor = categoryColors[cat] || "#6b7280";
+                const groupDiv = document.createElement("div");
+                groupDiv.className = "category-group";
+
+                const isCollapsed = categoryCollapsedState[cat] || false;
+                const allChecked = subClasses.every(sub => filterState[sub]);
+                
+                const header = document.createElement("div");
+                header.className = "category-header";
+                header.innerHTML = `
+                    <div class="category-header-left">
+                        <span class="indicator" style="background-color: ${catColor}; color: ${catColor};"></span>
+                        <span class="category-title">${cat} <span style="font-size: 10px; opacity: 0.6; margin-left: 4px;">${isCollapsed ? '▶' : '▼'}</span></span>
+                    </div>
+                    <div class="category-header-right">
+                        <span class="count-badge" style="margin-right: 6px;">${catCounts[cat]}</span>
+                        <label class="switch-toggle">
+                            <input type="checkbox" class="cat-master-check" ${allChecked ? 'checked' : ''}>
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+                `;
+
+                header.addEventListener("click", () => {
+                    categoryCollapsedState[cat] = !categoryCollapsedState[cat];
+                    renderCategoriesPanel();
+                });
+
+                const masterCheckbox = header.querySelector(".cat-master-check");
+                masterCheckbox.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const state = masterCheckbox.checked;
+                    subClasses.forEach(sub => {
+                        filterState[sub] = state;
+                    });
+                    document.querySelectorAll(`.subcheck-${cat.replace(/\s+/g, '')}`).forEach(cb => {
+                        cb.checked = state;
+                    });
+                    selectedRoi = null;
+                    selectedRois = selectedRois.filter(roi => filterState[roi.cls]);
+                    updateActiveCount();
+                    drawAnnotations();
+                });
+
+                const content = document.createElement("div");
+                content.className = "category-content";
+                if (isCollapsed) {
+                    content.style.display = "none";
+                }
+                
+                subClasses.forEach(subcls => {
+                    const row = document.createElement("label");
+                    row.className = "checkbox-container";
+                    row.innerHTML = `
+                        <div class="checkbox-left">
+                            <input type="checkbox" class="sub-check subcheck-${cat.replace(/\s+/g, '')}" data-subcls="${subcls}" ${filterState[subcls] ? 'checked' : ''}>
+                            <span>${subcls}</span>
+                        </div>
+                        <span class="count-badge">${subclsCounts[subcls] || 0}</span>
+                    `;
+
+                    const subCheckbox = row.querySelector(".sub-check");
+                    subCheckbox.addEventListener("change", () => {
+                        filterState[subcls] = subCheckbox.checked;
+                        const allCheckedNow = subClasses.every(sub => filterState[sub]);
+                        masterCheckbox.checked = allCheckedNow;
+                        selectedRoi = null;
+                        selectedRois = selectedRois.filter(roi => filterState[roi.cls]);
+                        updateActiveCount();
+                        drawAnnotations();
+                    });
+
+                    content.appendChild(row);
+                });
+
+                groupDiv.appendChild(header);
+                groupDiv.appendChild(content);
+                container.appendChild(groupDiv);
+            }
+            updateActiveCount();
+        }
+
+        function updateActiveCount() {
+            const sample = skinData.samples[currentSampleIdx];
+            const activeCount = sample.rois.filter(roi => filterState[roi.cls] && (roi.conf === undefined || roi.conf >= confThreshold)).length;
+            document.getElementById("stat-active").innerText = activeCount;
+        }
+
+        function drawAnnotations() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!faceImg.complete || !faceImg.src) return;
+
+            const rect = getFittedImageRect();
+
+            ctx.save();
+            ctx.translate(panOffset.x, panOffset.y);
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.scale(zoomScale, zoomScale);
+            ctx.translate(-canvas.width / 2, -canvas.height / 2);
+
+            ctx.drawImage(faceImg, rect.x, rect.y, rect.w, rect.h);
+
+            const sample = skinData.samples[currentSampleIdx];
+            sample.rois.forEach(roi => {
+                const passesFilter = filterState[roi.cls];
+                const passesConfidence = (roi.conf === undefined || roi.conf >= confThreshold);
+                
+                if (passesFilter && passesConfidence) {
+                    const catColor = categoryColors[roi.cat] || "#6b7280";
+                    
+                    const x_center = rect.x + roi.cx * rect.w;
+                    const y_center = rect.y + roi.cy * rect.h;
+                    const w = roi.w * rect.w;
+                    const h = roi.h * rect.h;
+                    
+                    const x_left = x_center - w / 2;
+                    const y_top = y_center - h / 2;
+                    
+                    if (selectedRoi === roi || selectedRois.includes(roi)) {
+                        ctx.strokeStyle = "#ffffff";
+                        ctx.lineWidth = 3 / zoomScale;
+                        ctx.strokeRect(x_left - 1, y_top - 1, w + 2, h + 2);
+                        
+                        if (selectedRoi === roi) {
+                            const handleSize = HANDLE_SIZE / zoomScale;
+                            ctx.fillStyle = "#ffffff";
+                            ctx.fillRect(x_left - handleSize/2, y_top - handleSize/2, handleSize, handleSize);
+                            ctx.fillRect(x_left + w - handleSize/2, y_top - handleSize/2, handleSize, handleSize);
+                            ctx.fillRect(x_left - handleSize/2, y_top + h - handleSize/2, handleSize, handleSize);
+                            ctx.fillRect(x_left + w - handleSize/2, y_top + h - handleSize/2, handleSize, handleSize);
+                        }
+                    }
+                    
+                    ctx.strokeStyle = catColor;
+                    ctx.lineWidth = 2 / zoomScale;
+                    ctx.strokeRect(x_left, y_top, w, h);
+                    
+                    ctx.fillStyle = catColor;
+                    ctx.fillRect(x_left, y_top, 4 / zoomScale, 4 / zoomScale);
+
+                    if (roi.conf !== undefined && roi.conf < 1.0) {
+                        ctx.fillStyle = catColor;
+                        ctx.font = `600 ${9 / zoomScale}px Plus Jakarta Sans`;
+                        ctx.fillText(roi.conf.toFixed(2), x_left, y_top - 4 / zoomScale);
+                    }
+                }
+            });
+
+            if (dragMode === 'select' && selectionBox) {
+                ctx.strokeStyle = "rgba(99, 102, 241, 0.8)";
+                ctx.lineWidth = 1 / zoomScale;
+                ctx.setLineDash([5 / zoomScale, 5 / zoomScale]);
+                ctx.strokeRect(
+                    selectionBox.x1,
+                    selectionBox.y1,
+                    selectionBox.x2 - selectionBox.x1,
+                    selectionBox.y2 - selectionBox.y1
+                );
+                ctx.setLineDash([]);
+                ctx.fillStyle = "rgba(99, 102, 241, 0.1)";
+                ctx.fillRect(
+                    selectionBox.x1,
+                    selectionBox.y1,
+                    selectionBox.x2 - selectionBox.x1,
+                    selectionBox.y2 - selectionBox.y1
+                );
+            }
+
+            ctx.restore();
+        }
+
+        canvas.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            
+            if (e.button === 2) {
+                isPanning = true;
+                panStartMouse = { x: e.clientX, y: e.clientY };
+                panStartOffset = { ...panOffset };
+                canvas.style.cursor = "grabbing";
+                hidePopover();
+                return;
+            }
+
+            const coords = getTransformedMouseCoords(e.clientX, e.clientY);
+            const mouseX = coords.x;
+            const mouseY = coords.y;
+
+            dragMode = null;
+            selectedRois = [];
+            hideBatchDelete();
+
+            if (e.shiftKey) {
+                dragMode = 'select';
+                selectionBox = { x1: mouseX, y1: mouseY, x2: mouseX, y2: mouseY };
+                selectedRoi = null;
+                hidePopover();
+                return;
+            }
+            
+            const rect = getFittedImageRect();
+
+            if (selectedRoi) {
+                const passesFilter = filterState[selectedRoi.cls];
+                const passesConfidence = (selectedRoi.conf === undefined || selectedRoi.conf >= confThreshold);
+                
+                if (passesFilter && passesConfidence) {
+                    const x_center = rect.x + selectedRoi.cx * rect.w;
+                    const y_center = rect.y + selectedRoi.cy * rect.h;
+                    const w = selectedRoi.w * rect.w;
+                    const h = selectedRoi.h * rect.h;
+                    const x_left = x_center - w / 2;
+                    const y_top = y_center - h / 2;
+
+                    const handleSize = HANDLE_SIZE / zoomScale;
+                    const checkHandle = (hx, hy) => {
+                        return Math.abs(mouseX - hx) <= handleSize * 1.5 && Math.abs(mouseY - hy) <= handleSize * 1.5;
+                    };
+
+                    if (checkHandle(x_left, y_top)) dragMode = 'resize-tl';
+                    else if (checkHandle(x_left + w, y_top)) dragMode = 'resize-tr';
+                    else if (checkHandle(x_left, y_top + h)) dragMode = 'resize-bl';
+                    else if (checkHandle(x_left + w, y_top + h)) dragMode = 'resize-br';
+
+                    if (dragMode) {
+                        dragStartMouse = { x: mouseX, y: mouseY };
+                        dragStartRoi = { cx: selectedRoi.cx, cy: selectedRoi.cy, w: selectedRoi.w, h: selectedRoi.h };
+                        hidePopover();
+                        return;
+                    }
+                }
+            }
+
+            const sample = skinData.samples[currentSampleIdx];
+            let clickedRoi = null;
+
+            for (let i = sample.rois.length - 1; i >= 0; i--) {
+                const roi = sample.rois[i];
+                const passesFilter = filterState[roi.cls];
+                const passesConfidence = (roi.conf === undefined || roi.conf >= confThreshold);
+
+                if (passesFilter && passesConfidence) {
+                    const x_center = rect.x + roi.cx * rect.w;
+                    const y_center = rect.y + roi.cy * rect.h;
+                    const w = roi.w * rect.w;
+                    const h = roi.h * rect.h;
+                    const x_left = x_center - w / 2;
+                    const y_top = y_center - h / 2;
+
+                    if (mouseX >= x_left && mouseX <= x_left + w &&
+                        mouseY >= y_top && mouseY <= y_top + h) {
+                        clickedRoi = roi;
+                        break;
+                    }
+                }
+            }
+
+            if (clickedRoi) {
+                selectedRoi = clickedRoi;
+                dragMode = 'move';
+                dragStartMouse = { x: mouseX, y: mouseY };
+                dragStartRoi = { cx: selectedRoi.cx, cy: selectedRoi.cy, w: selectedRoi.w, h: selectedRoi.h };
+                
+                showPopover(selectedRoi, coords.rawX, coords.rawY);
+                drawAnnotations();
+            } else {
+                selectedRoi = null;
+                hidePopover();
+                
+                dragMode = 'draw';
+                dragStartMouse = { x: mouseX, y: mouseY };
+                
+                const defaultClass = getFlatClassesList()[0] || "未知";
+                let roiCat = "其他膚況";
+                for (let cat in skinData.categories) {
+                    if (skinData.categories[cat].includes(defaultClass)) {
+                        roiCat = cat;
+                        break;
+                    }
+                }
+                
+                selectedRoi = {
+                    cls: defaultClass,
+                    cat: roiCat,
+                    cx: (mouseX - rect.x) / rect.w,
+                    cy: (mouseY - rect.y) / rect.h,
+                    w: 0.001,
+                    h: 0.001,
+                    conf: 1.0
+                };
+                
+                sample.rois.push(selectedRoi);
+                drawAnnotations();
+            }
+        });
+
+        canvas.addEventListener("mousemove", (e) => {
+            e.preventDefault();
+
+            if (isPanning) {
+                const dx = e.clientX - panStartMouse.x;
+                const dy = e.clientY - panStartMouse.y;
+                panOffset.x = panStartOffset.x + dx;
+                panOffset.y = panStartOffset.y + dy;
+                drawAnnotations();
+                return;
+            }
+
+            const coords = getTransformedMouseCoords(e.clientX, e.clientY);
+            const mouseX = coords.x;
+            const mouseY = coords.y;
+
+            if (dragMode === 'select' && selectionBox) {
+                selectionBox.x2 = mouseX;
+                selectionBox.y2 = mouseY;
+                
+                const x1 = Math.min(selectionBox.x1, selectionBox.x2);
+                const y1 = Math.min(selectionBox.y1, selectionBox.y2);
+                const x2 = Math.max(selectionBox.x1, selectionBox.x2);
+                const y2 = Math.max(selectionBox.y1, selectionBox.y2);
+                
+                const sample = skinData.samples[currentSampleIdx];
+                const rect = getFittedImageRect();
+                selectedRois = [];
+                
+                sample.rois.forEach(roi => {
+                    const passesFilter = filterState[roi.cls];
+                    const passesConfidence = (roi.conf === undefined || roi.conf >= confThreshold);
+                    
+                    if (passesFilter && passesConfidence) {
+                        const cx = rect.x + roi.cx * rect.w;
+                        const cy = rect.y + roi.cy * rect.h;
+                        if (cx >= x1 && cx <= x2 && cy >= y1 && cy <= y2) {
+                            selectedRois.push(roi);
+                        }
+                    }
+                });
+                
+                drawAnnotations();
+                return;
+            }
+
+            if (dragMode === 'draw' && selectedRoi) {
+                const rect = getFittedImageRect();
+                const x1 = Math.min(dragStartMouse.x, mouseX);
+                const y1 = Math.min(dragStartMouse.y, mouseY);
+                const x2 = Math.max(dragStartMouse.x, mouseX);
+                const y2 = Math.max(dragStartMouse.y, mouseY);
+                
+                selectedRoi.w = (x2 - x1) / rect.w;
+                selectedRoi.h = (y2 - y1) / rect.h;
+                selectedRoi.cx = (x1 + (x2-x1)/2 - rect.x) / rect.w;
+                selectedRoi.cy = (y1 + (y2-y1)/2 - rect.y) / rect.h;
+                
+                drawAnnotations();
+                return;
+            }
+
+            if (dragMode && selectedRoi) {
+                const rect = getFittedImageRect();
+                const dx = (mouseX - dragStartMouse.x) / rect.w;
+                const dy = (mouseY - dragStartMouse.y) / rect.h;
+
+                if (dragMode === 'move') {
+                    selectedRoi.cx = dragStartRoi.cx + dx;
+                    selectedRoi.cy = dragStartRoi.cy + dy;
+                } else {
+                    let x1 = (dragStartRoi.cx - dragStartRoi.w / 2);
+                    let y1 = (dragStartRoi.cy - dragStartRoi.h / 2);
+                    let x2 = (dragStartRoi.cx + dragStartRoi.w / 2);
+                    let y2 = (dragStartRoi.cy + dragStartRoi.h / 2);
+
+                    if (dragMode.includes('tl')) { x1 += dx; y1 += dy; }
+                    if (dragMode.includes('tr')) { x2 += dx; y1 += dy; }
+                    if (dragMode.includes('bl')) { x1 += dx; y2 += dy; }
+                    if (dragMode.includes('br')) { x2 += dx; y2 += dy; }
+
+                    if (x2 > x1 && y2 > y1) {
+                        selectedRoi.w = x2 - x1;
+                        selectedRoi.h = y2 - y1;
+                        selectedRoi.cx = x1 + selectedRoi.w / 2;
+                        selectedRoi.cy = y1 + selectedRoi.h / 2;
+                    }
+                }
+
+                selectedRoi.cx = Math.max(0, Math.min(1, selectedRoi.cx));
+                selectedRoi.cy = Math.max(0, Math.min(1, selectedRoi.cy));
+                selectedRoi.w = Math.max(0.001, Math.min(1, selectedRoi.w));
+                selectedRoi.h = Math.max(0.001, Math.min(1, selectedRoi.h));
+
+                drawAnnotations();
+                hidePopover(); // Hide popover during drag to avoid blocking view
+                return;
+            }
+
+            const sample = skinData.samples[currentSampleIdx];
+            const rect = getFittedImageRect();
+            let foundRoi = null;
+
+            for (let i = sample.rois.length - 1; i >= 0; i--) {
+                const roi = sample.rois[i];
+                const passesFilter = filterState[roi.cls];
+                const passesConfidence = (roi.conf === undefined || roi.conf >= confThreshold);
+
+                if (passesFilter && passesConfidence) {
+                    const x_center = rect.x + roi.cx * rect.w;
+                    const y_center = rect.y + roi.cy * rect.h;
+                    const w = roi.w * rect.w;
+                    const h = roi.h * rect.h;
+                    const x_left = x_center - w / 2;
+                    const y_top = y_center - h / 2;
+
+                    if (mouseX >= x_left && mouseX <= x_left + w &&
+                        mouseY >= y_top && mouseY <= y_top + h) {
+                        foundRoi = roi;
+                        break;
+                    }
+                }
+            }
+
+            if (foundRoi && !dragMode) {
+                tooltip.style.left = `${e.clientX - canvas.getBoundingClientRect().left + 15}px`;
+                tooltip.style.top = `${e.clientY - canvas.getBoundingClientRect().top + 15}px`;
+                tooltip.style.display = "block";
+                tooltip.innerHTML = `
+                    <div style="font-weight: 700; color: ${categoryColors[foundRoi.cat]}">${foundRoi.cls}</div>
+                    <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">類別: ${foundRoi.cat}</div>
+                `;
+            } else {
+                tooltip.style.display = "none";
+            }
+        });
+
+        canvas.addEventListener("mouseup", (e) => {
+            if (e.button === 2) {
+                isPanning = false;
+                canvas.style.cursor = "grab";
+                return;
+            }
+
+            if ((dragMode === 'draw' || dragMode === 'move' || (dragMode && dragMode.startsWith('resize'))) && selectedRoi) {
+                const rect = getFittedImageRect();
+                if (selectedRoi.w * rect.w < 5 || selectedRoi.h * rect.h < 5) {
+                    if (dragMode === 'draw') {
+                        const sample = skinData.samples[currentSampleIdx];
+                        const idx = sample.rois.indexOf(selectedRoi);
+                        if (idx > -1) sample.rois.splice(idx, 1);
+                    }
+                    selectedRoi = null;
+                    hidePopover();
+                } else {
+                    const rx_center = rect.x + selectedRoi.cx * rect.w;
+                    const ry_center = rect.y + selectedRoi.cy * rect.h;
+                    const rw = selectedRoi.w * rect.w;
+                    const rh = selectedRoi.h * rect.h;
+                    
+                    const rx_left = rx_center - rw/2;
+                    const ry_top = ry_center - rh/2;
+                    
+                    const screenX = panOffset.x + canvas.width/2 + (rx_left - canvas.width/2) * zoomScale;
+                    const screenY = panOffset.y + canvas.height/2 + (ry_top - canvas.height/2) * zoomScale;
+                    
+                    const bounding = canvas.getBoundingClientRect();
+                    showPopover(selectedRoi, screenX * (bounding.width / canvas.width), screenY * (bounding.height / canvas.height));
+                    renderCategoriesPanel();
+                }
+            } else if (dragMode === 'select') {
+                selectionBox = null;
+                if (selectedRois.length > 0) {
+                    const rect = canvas.getBoundingClientRect();
+                    showBatchDelete(e.clientX - rect.left, e.clientY - rect.top);
+                } else {
+                    hideBatchDelete();
+                }
+            }
+            
+            dragMode = null;
+            drawAnnotations();
+        });
+
+        function showBatchDelete(x, y) {
+            batchDeleteBtn.style.display = "block";
+            batchDeleteCountSpan.textContent = selectedRois.length;
+        }
+
+        function hideBatchDelete() {
+            batchDeleteBtn.style.display = "none";
+        }
+
+        function deleteSelectedRois() {
+            if (selectedRois.length > 0) {
+                const sample = skinData.samples[currentSampleIdx];
+                selectedRois.forEach(roi => {
+                    const idx = sample.rois.indexOf(roi);
+                    if (idx > -1) {
+                        sample.rois.splice(idx, 1);
+                    }
+                });
+                selectedRois = [];
+                hideBatchDelete();
+                drawAnnotations();
+                renderCategoriesPanel();
+            }
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === "Delete" || e.key === "Backspace") {
+                if (selectedRoi) {
+                    const sample = skinData.samples[currentSampleIdx];
+                    const idx = sample.rois.indexOf(selectedRoi);
+                    if (idx > -1) sample.rois.splice(idx, 1);
+                    selectedRoi = null;
+                    hidePopover();
+                    drawAnnotations();
+                    renderCategoriesPanel();
+                } else if (selectedRois.length > 0) {
+                    deleteSelectedRois();
+                }
+            }
+        }
+
+        function exportCurrentYolo() {
+            const sample = skinData.samples[currentSampleIdx];
+            const flatClasses = getFlatClassesList();
+            let txtContent = "";
+            
+            sample.rois.forEach(roi => {
+                const passesFilter = filterState[roi.cls];
+                const passesConfidence = (roi.conf === undefined || roi.conf >= confThreshold);
+                
+                if (passesFilter && passesConfidence) {
+                    const clsId = flatClasses.indexOf(roi.cls);
+                    if (clsId > -1) {
+                        txtContent += `${clsId} ${roi.cx.toFixed(6)} ${roi.cy.toFixed(6)} ${roi.w.toFixed(6)} ${roi.h.toFixed(6)}\n`;
+                    }
+                }
+            });
+
+            const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${sample.name}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        window.addEventListener("resize", () => {
+            const container = document.getElementById("viewport-container");
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            drawAnnotations();
+        });
+
+        // Report logic
+        let viewReportBtn = null;
+        let closeReportBtn = null;
+        let reportModal = null;
+
+        window.addEventListener("DOMContentLoaded", () => {
+            viewReportBtn = document.getElementById("view-report-btn");
+            closeReportBtn = document.getElementById("close-report-btn");
+            reportModal = document.getElementById("report-modal");
+
+            if (viewReportBtn) viewReportBtn.addEventListener("click", openReportModal);
+            if (closeReportBtn) closeReportBtn.addEventListener("click", closeReportModal);
+        });
+
+        function openReportModal() {
+            if (reportModal) {
+                reportModal.style.display = "flex";
+                calculateAndRenderReport();
+            }
+        }
+
+        function closeReportModal() {
+            if (reportModal) {
+                reportModal.style.display = "none";
+            }
+        }
+
+        function calculateAndRenderReport() {
+            if (!skinData || !skinData.samples) {
+                alert("測膚數據載入中，請稍候！");
+                return;
+            }
+            const sample = skinData.samples[currentSampleIdx];
+            if (!sample) return;
+            if (!sample.rois) sample.rois = [];
+
+            const counts = {
+                "粉刺毛孔": 0,
+                "痤瘡發炎": 0,
+                "斑點痣類": 0,
+                "疤痕凹洞": 0,
+                "敏感發紅": 0,
+                "老化皺紋": 0,
+                "其他膚況": 0
+            };
+
+            sample.rois.forEach(roi => {
+                const passesConfidence = (roi.conf === undefined || roi.conf >= confThreshold);
+                if (passesConfidence) {
+                    if (counts[roi.cat] !== undefined) {
+                        counts[roi.cat]++;
+                    } else {
+                        counts["其他膚況"]++;
+                    }
+                }
+            });
+
+            let score = 100 - (counts["痤瘡發炎"] * 1.5) - (counts["粉刺毛孔"] * 0.4) - (counts["斑點痣類"] * 0.8) - (counts["老化皺紋"] * 1.2) - (counts["敏感發紅"] * 1.8) - (counts["疤痕凹洞"] * 0.6);
+            score = Math.round(Math.max(35, Math.min(100, score)));
+
+            let baseAge = 28;
+            let skinAge = baseAge + Math.min(12, Math.floor(counts["老化皺紋"] / 1.5) + Math.floor(counts["斑點痣類"] / 2.5));
+            
+            let skinType = "中性肌";
+            if (counts["痤瘡發炎"] > 8 || counts["粉刺毛孔"] > 25) {
+                skinType = "油性肌";
+            } else if (counts["敏感發紅"] > 5) {
+                skinType = "敏感肌";
+            } else if (counts["老化皺紋"] > 10) {
+                skinType = "乾性/衰老肌";
+            } else if (counts["粉刺毛孔"] > 12) {
+                skinType = "混合肌";
+            }
+
+            document.getElementById("report-score-val").innerText = score;
+            document.getElementById("report-skin-age").innerText = skinAge;
+            document.getElementById("report-skin-type").innerText = skinType;
+
+            drawScoreRing(score);
+            renderReportDimensions(counts);
+            drawRadarChart(counts);
+            drawReportFace();
+            generateRecommendations(counts);
+            lucide.createIcons({attrs: {class: "icon-sm"}});
+        }
+
+        function drawReportFace() {
+            const canvasFace = document.getElementById("report-face-canvas");
+            if (!canvasFace) return;
+            const ctxFace = canvasFace.getContext("2d");
+            const sample = skinData.samples[currentSampleIdx];
+            if (!sample || !faceImg.complete) return;
+
+            ctxFace.clearRect(0, 0, canvasFace.width, canvasFace.height);
+
+            const canvasRatio = canvasFace.width / canvasFace.height;
+            const imgRatio = faceImg.naturalWidth / faceImg.naturalHeight;
+            let w, h, x, y;
+            if (canvasRatio > imgRatio) {
+                h = canvasFace.height;
+                w = h * imgRatio;
+                x = (canvasFace.width - w) / 2;
+                y = 0;
+            } else {
+                w = canvasFace.width;
+                h = w / imgRatio;
+                x = 0;
+                y = (canvasFace.height - h) / 2;
+            }
+
+            ctxFace.drawImage(faceImg, x, y, w, h);
+
+            sample.rois.forEach(roi => {
+                const passesConfidence = (roi.conf === undefined || roi.conf >= confThreshold);
+                const passesFilter = filterState[roi.cls];
+                if (passesConfidence && passesFilter) {
+                    const catColor = categoryColors[roi.cat] || "#6b7280";
+                    
+                    const cx = x + roi.cx * w;
+                    const cy = y + roi.cy * h;
+                    const rSize = Math.max(6, Math.round(((roi.w + roi.h) / 2) * w));
+                    
+                    ctxFace.save();
+                    ctxFace.shadowBlur = 6;
+                    ctxFace.shadowColor = catColor.replace("hsl", "hsla").replace(")", ", 0.4)");
+                    
+                    ctxFace.beginPath();
+                    ctxFace.arc(cx, cy, rSize, 0, 2 * Math.PI);
+                    
+                    const radial = ctxFace.createRadialGradient(cx, cy, rSize * 0.1, cx, cy, rSize);
+                    radial.addColorStop(0, catColor.replace("hsl", "hsla").replace(")", ", 0.25)"));
+                    radial.addColorStop(0.8, catColor.replace("hsl", "hsla").replace(")", ", 0.06)"));
+                    radial.addColorStop(1, "transparent");
+                    
+                    ctxFace.fillStyle = radial;
+                    ctxFace.fill();
+                    
+                    ctxFace.strokeStyle = catColor.replace("hsl", "hsla").replace(")", ", 0.45)");
+                    ctxFace.lineWidth = 1.5;
+                    ctxFace.stroke();
+                    ctxFace.restore();
+                }
+            });
+        }
+
+        function drawScoreRing(score) {
+            const canvasRing = document.getElementById("score-ring-canvas");
+            const ctxRing = canvasRing.getContext("2d");
+            ctxRing.clearRect(0, 0, 150, 150);
+            
+            ctxRing.beginPath();
+            ctxRing.arc(75, 75, 65, 0, 2 * Math.PI);
+            ctxRing.strokeStyle = "rgba(255, 255, 255, 0.05)";
+            ctxRing.lineWidth = 10;
+            ctxRing.stroke();
+            
+            const percent = score / 100;
+            ctxRing.beginPath();
+            ctxRing.arc(75, 75, 65, -0.5 * Math.PI, (-0.5 + 2 * percent) * Math.PI);
+            
+            const gradient = ctxRing.createLinearGradient(0, 0, 150, 150);
+            gradient.addColorStop(0, '#6366f1');
+            gradient.addColorStop(1, '#d946ef');
+            
+            ctxRing.strokeStyle = gradient;
+            ctxRing.lineWidth = 10;
+            ctxRing.lineCap = "round";
+            ctxRing.stroke();
+        }
+
+        function drawRadarChart(counts) {
+            const canvasRadar = document.getElementById("radar-chart-canvas");
+            const ctxRadar = canvasRadar.getContext("2d");
+            ctxRadar.clearRect(0, 0, 280, 280);
+
+            const center = 140;
+            const radius = 90;
+            const labels = ["粉刺毛孔", "痤瘡發炎", "斑點痣類", "疤痕凹洞", "敏感發紅", "老化皺紋"];
+            const numAxes = labels.length;
+
+            const getVal = (cat, maxVal) => {
+                const count = counts[cat] || 0;
+                return Math.max(20, Math.min(100, 100 - (count / maxVal) * 100));
+            };
+
+            const dataValues = [
+                getVal("粉刺毛孔", 40),
+                getVal("痤瘡發炎", 15),
+                getVal("斑點痣類", 20),
+                getVal("疤痕凹洞", 10),
+                getVal("敏感發紅", 12),
+                getVal("老化皺紋", 15)
+            ];
+
+            ctxRadar.strokeStyle = "rgba(255, 255, 255, 0.08)";
+            ctxRadar.lineWidth = 1;
+
+            for (let r = 1; r <= 4; r++) {
+                const currentRadius = (radius / 4) * r;
+                ctxRadar.beginPath();
+                for (let i = 0; i < numAxes; i++) {
+                    const angle = (i * 2 * Math.PI / numAxes) - 0.5 * Math.PI;
+                    const x = center + currentRadius * Math.cos(angle);
+                    const y = center + currentRadius * Math.sin(angle);
+                    if (i === 0) ctxRadar.moveTo(x, y);
+                    else ctxRadar.lineTo(x, y);
+                }
+                ctxRadar.closePath();
+                ctxRadar.stroke();
+            }
+
+            for (let i = 0; i < numAxes; i++) {
+                const angle = (i * 2 * Math.PI / numAxes) - 0.5 * Math.PI;
+                ctxRadar.beginPath();
+                ctxRadar.moveTo(center, center);
+                ctxRadar.lineTo(center + radius * Math.cos(angle), center + radius * Math.sin(angle));
+                ctxRadar.stroke();
+            }
+
+            ctxRadar.fillStyle = "rgba(255, 255, 255, 0.6)";
+            ctxRadar.font = "600 11px Plus Jakarta Sans";
+            ctxRadar.textAlign = "center";
+            ctxRadar.textBaseline = "middle";
+            for (let i = 0; i < numAxes; i++) {
+                const angle = (i * 2 * Math.PI / numAxes) - 0.5 * Math.PI;
+                const labelX = center + (radius + 20) * Math.cos(angle);
+                const labelY = center + (radius + 12) * Math.sin(angle);
+                ctxRadar.fillText(labels[i], labelX, labelY);
+            }
+
+            ctxRadar.beginPath();
+            for (let i = 0; i < numAxes; i++) {
+                const angle = (i * 2 * Math.PI / numAxes) - 0.5 * Math.PI;
+                const valPercent = dataValues[i] / 100;
+                const x = center + (radius * valPercent) * Math.cos(angle);
+                const y = center + (radius * valPercent) * Math.sin(angle);
+                if (i === 0) ctxRadar.moveTo(x, y);
+                else ctxRadar.lineTo(x, y);
+            }
+            ctxRadar.closePath();
+            
+            ctxRadar.fillStyle = "rgba(99, 102, 241, 0.25)";
+            ctxRadar.fill();
+            
+            ctxRadar.strokeStyle = "#818cf8";
+            ctxRadar.lineWidth = 2.5;
+            ctxRadar.stroke();
+
+            ctxRadar.fillStyle = "#ffffff";
+            for (let i = 0; i < numAxes; i++) {
+                const angle = (i * 2 * Math.PI / numAxes) - 0.5 * Math.PI;
+                const valPercent = dataValues[i] / 100;
+                const x = center + (radius * valPercent) * Math.cos(angle);
+                const y = center + (radius * valPercent) * Math.sin(angle);
+                ctxRadar.beginPath();
+                ctxRadar.arc(x, y, 4, 0, 2*Math.PI);
+                ctxRadar.fill();
+            }
+        }
+
+        function renderReportDimensions(counts) {
+            const list = document.getElementById("report-dimensions-list");
+            list.innerHTML = "";
+
+            const dims = [
+                { key: "粉刺毛孔", name: "粉刺毛孔", max: 40, unit: "個" },
+                { key: "痤瘡發炎", name: "痤瘡發炎", max: 15, unit: "處" },
+                { key: "斑點痣類", name: "斑點痣類", max: 20, unit: "個" },
+                { key: "疤痕凹洞", name: "疤痕凹洞", max: 10, unit: "個" },
+                { key: "敏感發紅", name: "敏感發紅", max: 12, unit: "處" },
+                { key: "老化皺紋", name: "老化皺紋", max: 15, unit: "條" }
+            ];
+
+            dims.forEach(d => {
+                const count = counts[d.key] || 0;
+                const percent = Math.min(100, Math.round((count / d.max) * 100));
+                
+                let level = "健康";
+                let levelColor = "#10b981";
+                if (count > 0 && percent <= 30) {
+                    level = "輕度";
+                    levelColor = "#fbbf24";
+                } else if (percent > 30 && percent <= 70) {
+                    level = "中度";
+                    levelColor = "#f59e0b";
+                } else if (percent > 70) {
+                    level = "重度";
+                    levelColor = "#ef4444";
+                }
+
+                const catColor = categoryColors[d.key];
+
+                const card = document.createElement("div");
+                card.style.cssText = "background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px;";
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
+                        <span style="font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: ${catColor};"></span>
+                            ${d.name}
+                        </span>
+                        <span style="font-size: 13px; font-weight: 600;">
+                            ${count} ${d.unit} <span style="margin-left: 8px; color: ${levelColor}; font-size: 11px; font-weight: 700; background: ${levelColor}20; padding: 2px 6px; border-radius: 4px;">${level}</span>
+                        </span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
+                        <div style="width: ${percent}%; height: 100%; background: ${catColor}; border-radius: 3px;"></div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function generateRecommendations(counts) {
+            let maxKey = "粉刺毛孔";
+            let maxVal = 0;
+            for (let k in counts) {
+                if (counts[k] > maxVal && k !== "其他膚況") {
+                    maxVal = counts[k];
+                    maxKey = k;
+                }
+            }
+
+            let advice = "";
+            let goods = [];
+
+            if (maxVal === 0) {
+                advice = "您的肌膚狀況非常理想，各項指標均處於健康狀態！建議平時注意日常的水油平衡，做好基礎清潔與日常物理防曬，多補充水分以維持健康屏障。";
+                goods = [
+                    {
+                        name: "24小時肌底含水霜",
+                        pic: "https://zm.yiyuan.ai/fileSvr/get/sy-prd-skin3/20240822/6b72c96009f47e8d630cde5c713d075c-4503599864651247.png",
+                        desc: "強效保濕屏障，給予健康肌底全天候的水潤防護。"
+                    },
+                    {
+                        name: "純物理修護防護乳(物理性防曬)",
+                        pic: "https://zm.yiyuan.ai/fileSvr/get/sy-prd-skin3/20241017/f41fcf941c2f7b571ad23c1962e331da-4503599876206810.jpg",
+                        desc: "溫和無負擔的純物理性防曬，全面抵禦紫外線侵害。"
+                    }
+                ];
+            } else if (maxKey === "痤瘡發炎" || maxKey === "粉刺毛孔") {
+                advice = "檢測到皮脂分泌較為旺盛，部分毛囊導管角化異常，導致面部出現粉刺與發炎性丘疹。建議日常潔面要溫和徹底，避免用手擠壓，多吃富含維生素 B 與 E 的食物，避免過甜、過油等辛辣刺激食物。護膚上應優先選用控油補水及具收斂、微剝脫角質功效的產品，加速新陳代謝。";
+                goods = [
+                    {
+                        name: "毛孔飛梭調理液",
+                        pic: "https://zm.yiyuan.ai/fileSvr/get/sy-prd-skin3/20241017/61d89c146f994a4de851a947fd1b1212-4503599876205409.png",
+                        desc: "添加微量水楊酸與金縷梅提取物，深層潔淨收斂毛孔，抑制皮脂過度分泌。"
+                    },
+                    {
+                        name: "杏仁酸亮膚煥顏課程",
+                        pic: "https://zm.yiyuan.ai/fileSvr/get/sy-prd-skin3/20240916/cf414d40d0fdc9cea3a9a22e738e6506-4503599869529359.jpg",
+                        desc: "專業親脂性杏仁酸課程，溫和加速老廢角質剝脫，深層導出粉刺，改善肌膚粗糙。"
+                    }
+                ];
+            } else if (maxKey === "斑點痣類") {
+                advice = "檢測到面部色素分佈較多，有明顯紫外斑堆積。主要是由於紫外線照射刺激黑素母細胞活性頻繁，引發黑色素殘留於表皮。改善斑點的首要任務是做好防曬與強力抗氧化工作，建議補充維生素 C 和 E 類食物，護膚可搭配亮白及淡斑成分，加速阻斷與代謝沉澱的黑色素。";
+                goods = [
+                    {
+                        name: "天使水光驅黑乳",
+                        pic: "https://zm.yiyuan.ai/fileSvr/get/sy-prd-skin3/20240822/3d2532098a2961d64ca305b216471da6-4503599864651843.png",
+                        desc: "含高濃度傳明酸與煙醯胺，深層抑製黑色素生成，淡化頑固斑點與色素沉澱。"
+                    },
+                    {
+                        name: "紅米斷黑課程",
+                        pic: "https://zm.yiyuan.ai/fileSvr/get/sy-prd-skin3/20240916/628aa5b19ad9b1fbd8d18498d43d2054-4503599869531787.jpg",
+                        desc: "利用天然紅米精萃與美白導入儀器，阻斷肌底暗沈路徑，呈現淨白透亮光澤。"
+                    }
+                ];
+            } else if (maxKey === "敏感發紅") {
+                advice = "檢測到部分肌膚屏障受損，皮下微血管較為擴張，引發片狀紅斑與敏感發紅。此時應禁止使用強力去角質或功效性護膚品，避免吃魚、蝦、蟹等易過敏食物。護膚以「物理修護、重建屏障」為主，選擇添加神經醯胺、金盞花等溫和修復與抗炎的護敏保養品。";
+                goods = [
+                    {
+                        name: "水漾柔敏液",
+                        pic: "https://zm.yiyuan.ai/fileSvr/get/sy-prd-skin3/20240822/90fb71e944cac398fd27303fa292c475-4503599864600525.png",
+                        desc: "專為敏感性及受損肌膚設計，即時舒緩發紅紅血絲，修護皮脂膜屏障。"
+                    },
+                    {
+                        name: "金盞花舒敏蠶絲面膜",
+                        pic: "https://zm.yiyuan.ai/fileSvr/get/sy-prd-skin3/20241017/276eaa79decf5bdb9e89dc28be214e8d-4503599876205784.png",
+                        desc: "富含金盞花與積雪草抗炎精華，親膚蠶絲載體，深度鎮靜降溫發炎受損。"
+                    }
+                ];
+            } else {
+                advice = "檢測到肌膚彈性纖維與膠原蛋白有流失現象，面部產生細紋。主因是外界環境影響、紫外線UV照射以及水分流失，令肌底支撐減弱。日常應加強抗氧化與抗衰老保養，控制面部大幅度表情動作，並使用含多肽、膠原蛋白等高效保濕抗老乳霜。";
+                goods = [
+                    {
+                        name: "超進化全能精華霜",
+                        pic: "https://zm.yiyuan.ai/fileSvr/get/sy-prd-skin3/20240822/f8b62c10f10144e3bde2a40f5efc002e-4503599864601655.png",
+                        desc: "蘊含黃金六胜肽與水解膠原，撫平乾紋與真性表情紋，重建緊緻輪廓。"
+                    },
+                    {
+                        name: "彈力微雕課程",
+                        pic: "https://zm.yiyuan.ai/fileSvr/get/sy-prd-skin3/20240916/db3b0d88ba77ed8605697b590b4c0715-4503599869529631.jpg",
+                        desc: "沙龍級深層音波導入抗老課程，協同膠原蛋白自我修護，改善面部鬆弛細紋。"
+                    }
+                ];
+            }
+
+            document.getElementById("report-advice-text").innerText = advice;
+
+            const recList = document.getElementById("report-recommendations-list");
+            recList.innerHTML = "";
+            goods.forEach(g => {
+                const item = document.createElement("div");
+                item.style.cssText = "display: flex; gap: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; align-items: center;";
+                item.innerHTML = `
+                    <div style="width: 60px; height: 60px; border-radius: 8px; background: #000; overflow: hidden; flex-shrink: 0; border: 1px solid var(--border-color);">
+                        <img src="${g.pic}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 700; font-size: 13.5px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${g.name}</div>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">${g.desc}</div>
+                    </div>
+                `;
+                recList.appendChild(item);
+            });
+        }
+
+        window.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons({
+                attrs: {
+                    class: "icon-sm"
+                }
+            });
+        });
+    </script>
+
+    <!-- Skin Report Modal -->
+    <div id="report-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(3, 7, 18, 0.96); backdrop-filter: blur(40px); z-index: 99999; overflow-y: auto; padding: 40px; justify-content: center; align-items: flex-start;">
+        <div style="width: 100%; max-width: 1400px; display: flex; flex-direction: column; gap: 24px;">
+            <!-- Modal Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
+                <div>
+                    <h2 style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI 智能測膚生理學診斷報告</h2>
+                    <p style="color: var(--text-secondary); font-size: 13px; margin-top: 4px;">基於深度神經網絡的多光譜病灶計量與膚質維度評估</p>
+                </div>
+                <button id="close-report-btn" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: white; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
+                    <i data-lucide="x" class="icon-sm"></i> 關閉報告
+                </button>
+            </div>
+
+            <!-- Bento Report Grid -->
+            <div style="display: grid; grid-template-columns: 350px 1fr 400px; gap: 24px;">
+                <!-- Column 1: Core Metrics & Radar -->
+                <div class="glass-panel" style="padding: 24px; gap: 20px; background: rgba(255,255,255,0.015); border-radius: 16px;">
+                    <div style="text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
+                        <div style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">綜合膚況得分</div>
+                        <div style="position: relative; width: 150px; height: 150px; margin: 16px auto; display: flex; align-items: center; justify-content: center;">
+                            <canvas id="score-ring-canvas" width="150" height="150" style="position: absolute; top: 0; left: 0;"></canvas>
+                            <div style="font-size: 40px; font-weight: 900; font-family: 'Outfit'; background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" id="report-score-val">90</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-around; margin-top: 10px;">
+                            <div>
+                                <div style="font-size: 18px; font-weight: 800; color: #818cf8;" id="report-skin-age">28</div>
+                                <div style="font-size: 11px; color: var(--text-secondary);">肌膚年齡</div>
+                            </div>
+                            <div style="width: 1px; background: var(--border-color);"></div>
+                            <div>
+                                <div style="font-size: 18px; font-weight: 800; color: #f472b6;" id="report-skin-type">油性肌</div>
+                                <div style="font-size: 11px; color: var(--text-secondary);">當前膚質</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">膚質多維度分佈雷達</div>
+                        <div style="width: 100%; display: flex; justify-content: center;">
+                            <canvas id="radar-chart-canvas" width="280" height="280"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2: AI Face Scan Overlay -->
+                <div class="glass-panel" style="padding: 24px; gap: 16px; background: rgba(255,255,255,0.015); border-radius: 16px; display: flex; flex-direction: column; align-items: center;">
+                    <div style="width: 100%; font-size: 13.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 10px;">
+                        AI 全面部病灶分佈透視
+                    </div>
+                    <div style="flex: 1; display: flex; align-items: center; justify-content: center; width: 100%;">
+                        <canvas id="report-face-canvas" width="450" height="580" style="max-width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--border-color); background: #060913; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"></canvas>
+                    </div>
+                </div>
+
+                <!-- Column 3: Metrics & Recommendations stacked -->
+                <div style="display: flex; flex-direction: column; gap: 24px; height: 100%; max-height: 800px; overflow: hidden;">
+                    <!-- Specific Dimensions -->
+                    <div class="glass-panel" style="padding: 24px; gap: 16px; background: rgba(255,255,255,0.015); border-radius: 16px; flex: 1; overflow-y: auto;">
+                        <div style="font-size: 13.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                            八大膚況維度計量分析
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 10px;" id="report-dimensions-list">
+                            <!-- Rendered dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Advice & Products -->
+                    <div class="glass-panel" style="padding: 24px; gap: 16px; background: rgba(255,255,255,0.015); border-radius: 16px; flex: 1.2; display: flex; flex-direction: column; overflow-y: auto;">
+                        <div style="font-size: 13.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                            專業醫學改善建議與配方
+                        </div>
+                        <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.15); padding: 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.5; color: var(--text-primary); margin-bottom: 10px;" id="report-advice-text">
+                            正在分析膚況以生成個人化建議...
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 10px;" id="report-recommendations-list">
+                            <!-- Dynamic product list -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
